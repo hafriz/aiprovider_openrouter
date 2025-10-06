@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace aiprovider_openai;
+namespace aiprovider_openrouter;
 
 use core_ai\aiactions;
 use core_ai\rate_limiter;
@@ -23,16 +23,20 @@ use Psr\Http\Message\RequestInterface;
 /**
  * Class provider.
  *
- * @package    aiprovider_openai
+ * @package    aiprovider_openrouter
+ * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
  * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider extends \core_ai\provider {
-    /** @var string The openAI API key. */
+    /** @var string The OpenRouter API key. */
     private string $apikey;
 
-    /** @var string The organisation ID that goes with the key. */
-    private string $orgid;
+    /** @var string Value sent as HTTP-Referer header required by OpenRouter. */
+    private string $httpreferer;
+
+    /** @var string Value sent as X-Title header recommended by OpenRouter. */
+    private string $xtitle;
 
     /** @var bool Is global rate limiting for the API enabled. */
     private bool $enableglobalratelimit;
@@ -50,16 +54,26 @@ class provider extends \core_ai\provider {
      * Class constructor.
      */
     public function __construct() {
+        global $CFG;
         // Get api key from config.
-        $this->apikey = get_config('aiprovider_openai', 'apikey');
-        // Get api org id from config.
-        $this->orgid = get_config('aiprovider_openai', 'orgid');
+        $this->apikey = get_config('aiprovider_openrouter', 'apikey');
+        // Get headers from config, falling back to sensible defaults.
+        $this->httpreferer = get_config('aiprovider_openrouter', 'httpreferer') ?: $CFG->wwwroot;
+        $defaulttitle = get_config('moodle', 'sitename') ?: 'Moodle';
+        $this->xtitle = get_config('aiprovider_openrouter', 'xtitle') ?: $defaulttitle;
+        // Legacy support for the old organisation id config.
+        if (empty($this->httpreferer)) {
+            $legacyorgid = get_config('aiprovider_openrouter', 'orgid');
+            if (!empty($legacyorgid)) {
+                $this->httpreferer = $legacyorgid;
+            }
+        }
         // Get global rate limit from config.
-        $this->enableglobalratelimit = get_config('aiprovider_openai', 'enableglobalratelimit');
-        $this->globalratelimit = get_config('aiprovider_openai', 'globalratelimit');
+        $this->enableglobalratelimit = get_config('aiprovider_openrouter', 'enableglobalratelimit');
+        $this->globalratelimit = get_config('aiprovider_openrouter', 'globalratelimit');
         // Get user rate limit from config.
-        $this->enableuserratelimit = get_config('aiprovider_openai', 'enableuserratelimit');
-        $this->userratelimit = get_config('aiprovider_openai', 'userratelimit');
+        $this->enableuserratelimit = get_config('aiprovider_openrouter', 'enableuserratelimit');
+        $this->userratelimit = get_config('aiprovider_openrouter', 'userratelimit');
     }
 
     /**
@@ -97,9 +111,15 @@ class provider extends \core_ai\provider {
      * @return \Psr\Http\Message\RequestInterface
      */
     public function add_authentication_headers(RequestInterface $request): RequestInterface {
-        return $request
-            ->withAddedHeader('Authorization', "Bearer {$this->apikey}")
-            ->withAddedHeader('OpenAI-Organization', $this->orgid);
+        $request = $request->withAddedHeader('Authorization', "Bearer {$this->apikey}");
+        if (!empty($this->httpreferer)) {
+            $request = $request->withAddedHeader('HTTP-Referer', $this->httpreferer);
+        }
+        if (!empty($this->xtitle)) {
+            $request = $request->withAddedHeader('X-Title', $this->xtitle);
+        }
+
+        return $request;
     }
 
     #[\Override]
@@ -159,43 +179,43 @@ class provider extends \core_ai\provider {
         if ($actionname === 'generate_text' || $actionname === 'summarise_text') {
             // Add the model setting.
             $settings[] = new \admin_setting_configtext(
-                "aiprovider_openai/action_{$actionname}_model",
-                new \lang_string("action:{$actionname}:model", 'aiprovider_openai'),
-                new \lang_string("action:{$actionname}:model_desc", 'aiprovider_openai'),
-                'gpt-4o',
+                "aiprovider_openrouter/action_{$actionname}_model",
+                new \lang_string("action:{$actionname}:model", 'aiprovider_openrouter'),
+                new \lang_string("action:{$actionname}:model_desc", 'aiprovider_openrouter'),
+                'openrouter/auto',
                 PARAM_TEXT,
             );
             // Add API endpoint.
             $settings[] = new \admin_setting_configtext(
-                "aiprovider_openai/action_{$actionname}_endpoint",
-                new \lang_string("action:{$actionname}:endpoint", 'aiprovider_openai'),
+                "aiprovider_openrouter/action_{$actionname}_endpoint",
+                new \lang_string("action:{$actionname}:endpoint", 'aiprovider_openrouter'),
                 '',
-                'https://api.openai.com/v1/chat/completions',
+                'https://openrouter.ai/api/v1/chat/completions',
                 PARAM_URL,
             );
             // Add system instruction settings.
             $settings[] = new \admin_setting_configtextarea(
-                "aiprovider_openai/action_{$actionname}_systeminstruction",
-                new \lang_string("action:{$actionname}:systeminstruction", 'aiprovider_openai'),
-                new \lang_string("action:{$actionname}:systeminstruction_desc", 'aiprovider_openai'),
+                "aiprovider_openrouter/action_{$actionname}_systeminstruction",
+                new \lang_string("action:{$actionname}:systeminstruction", 'aiprovider_openrouter'),
+                new \lang_string("action:{$actionname}:systeminstruction_desc", 'aiprovider_openrouter'),
                 $action::get_system_instruction(),
                 PARAM_TEXT
             );
         } else if ($actionname === 'generate_image') {
             // Add the model setting.
             $settings[] = new \admin_setting_configtext(
-                "aiprovider_openai/action_{$actionname}_model",
-                new \lang_string("action:{$actionname}:model", 'aiprovider_openai'),
-                new \lang_string("action:{$actionname}:model_desc", 'aiprovider_openai'),
-                'dall-e-3',
+                "aiprovider_openrouter/action_{$actionname}_model",
+                new \lang_string("action:{$actionname}:model", 'aiprovider_openrouter'),
+                new \lang_string("action:{$actionname}:model_desc", 'aiprovider_openrouter'),
+                'openai/dall-e-3',
                 PARAM_TEXT,
             );
             // Add API endpoint.
             $settings[] = new \admin_setting_configtext(
-                "aiprovider_openai/action_{$actionname}_endpoint",
-                new \lang_string("action:{$actionname}:endpoint", 'aiprovider_openai'),
+                "aiprovider_openrouter/action_{$actionname}_endpoint",
+                new \lang_string("action:{$actionname}:endpoint", 'aiprovider_openrouter'),
                 '',
-                'https://api.openai.com/v1/images/generations',
+                'https://openrouter.ai/api/v1/images/generations',
                 PARAM_URL,
             );
         }

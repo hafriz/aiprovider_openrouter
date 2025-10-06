@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace aiprovider_openai;
+namespace aiprovider_openrouter;
 
 use core\http_client;
 use core_ai\aiactions\responses\response_base;
@@ -28,7 +28,8 @@ use Psr\Http\Message\UriInterface;
 /**
  * Class process text generation.
  *
- * @package    aiprovider_openai
+ * @package    aiprovider_openrouter
+ * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
  * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

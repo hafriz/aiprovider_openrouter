@@ -14,22 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace aiprovider_openai;
+namespace aiprovider_openrouter;
 
-use aiprovider_openai\process_generate_text;
+use aiprovider_openrouter\process_generate_text;
 use core_ai\aiactions\base;
 use core_ai\provider;
 use GuzzleHttp\Psr7\Response;
 
 /**
- * Test Generate text provider class for OpenAI provider methods.
+ * Test Generate text provider class for OpenRouter provider methods.
  *
- * @package    aiprovider_openai
+ * @package    aiprovider_openrouter
+ * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
  * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \aiprovider_openai\provider
- * @covers     \aiprovider_openai\process_generate_text
- * @covers     \aiprovider_openai\abstract_processor
+ * @covers     \aiprovider_openrouter\provider
+ * @covers     \aiprovider_openrouter\process_generate_text
+ * @covers     \aiprovider_openrouter\abstract_processor
  */
 final class process_generate_text_test extends \advanced_testcase {
     /** @var string A successful response in JSON format. */
@@ -47,7 +48,9 @@ final class process_generate_text_test extends \advanced_testcase {
     protected function setUp(): void {
         parent::setUp();
         // Load a response body from a file.
-        $this->responsebodyjson = file_get_contents(self::get_fixture_path('aiprovider_openai', 'text_request_success.json'));
+        $this->responsebodyjson = file_get_contents(self::get_fixture_path('aiprovider_openrouter', 'text_request_success.json'));
+        set_config('action_generate_text_model', 'openrouter/auto', 'aiprovider_openrouter');
+        set_config('action_generate_text_endpoint', 'https://openrouter.ai/api/v1/chat/completions', 'aiprovider_openrouter');
         $this->create_provider();
         $this->create_action();
     }
@@ -56,7 +59,7 @@ final class process_generate_text_test extends \advanced_testcase {
      * Create the provider object.
      */
     private function create_provider(): void {
-        $this->provider = new \aiprovider_openai\provider();
+        $this->provider = new \aiprovider_openrouter\provider();
     }
 
     /**
@@ -122,7 +125,8 @@ final class process_generate_text_test extends \advanced_testcase {
             } else if ($status == 503) {
                 $this->assertEquals('Service Unavailable', $result['errormessage']);
             } else {
-                $this->assertStringContainsString($response->getBody()->getContents(), $result['errormessage']);
+                $expectedmessage = $response->getBody()->getContents();
+                $this->assertStringContainsString($expectedmessage, $result['errormessage']);
             }
         }
     }
@@ -148,8 +152,8 @@ final class process_generate_text_test extends \advanced_testcase {
         $this->assertEquals('fp_c4e5b6fa31', $result['fingerprint']);
         $this->assertStringContainsString('Sure, here is some sample text', $result['generatedcontent']);
         $this->assertEquals('stop', $result['finishreason']);
-        $this->assertEquals('11', $result['prompttokens']);
-        $this->assertEquals('568', $result['completiontokens']);
+        $this->assertEquals(11, $result['prompttokens']);
+        $this->assertEquals(568, $result['completiontokens']);
 
     }
 
@@ -176,8 +180,8 @@ final class process_generate_text_test extends \advanced_testcase {
         $this->assertEquals('fp_c4e5b6fa31', $result['fingerprint']);
         $this->assertStringContainsString('Sure, here is some sample text', $result['generatedcontent']);
         $this->assertEquals('stop', $result['finishreason']);
-        $this->assertEquals('11', $result['prompttokens']);
-        $this->assertEquals('568', $result['completiontokens']);
+        $this->assertEquals(11, $result['prompttokens']);
+        $this->assertEquals(568, $result['completiontokens']);
     }
 
     /**
@@ -195,8 +199,8 @@ final class process_generate_text_test extends \advanced_testcase {
             'fingerprint' => 'fp_c4e5b6fa31',
             'generatedcontent' => 'Sure, here is some sample text',
             'finishreason' => 'stop',
-            'prompttokens' => '11',
-            'completiontokens' => '568',
+            'prompttokens' => 11,
+            'completiontokens' => 568,
         ];
 
         $result = $method->invoke($processor, $response);
@@ -300,8 +304,8 @@ final class process_generate_text_test extends \advanced_testcase {
         $clock = $this->mock_clock_with_frozen();
 
         // Set the user rate limiter.
-        set_config('enableuserratelimit', 1, 'aiprovider_openai');
-        set_config('userratelimit', 1, 'aiprovider_openai');
+        set_config('enableuserratelimit', 1, 'aiprovider_openrouter');
+        set_config('userratelimit', 1, 'aiprovider_openrouter');
 
         // Mock the http client to return a successful response.
         ['mock' => $mock] = $this->get_mocked_http_client();
@@ -381,8 +385,8 @@ final class process_generate_text_test extends \advanced_testcase {
         $clock = $this->mock_clock_with_frozen();
 
         // Set the global rate limiter.
-        set_config('enableglobalratelimit', 1, 'aiprovider_openai');
-        set_config('globalratelimit', 1, 'aiprovider_openai');
+        set_config('enableglobalratelimit', 1, 'aiprovider_openrouter');
+        set_config('globalratelimit', 1, 'aiprovider_openrouter');
 
         // Mock the http client to return a successful response.
         ['mock' => $mock] = $this->get_mocked_http_client();
