@@ -14,21 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace aiprovider_openai;
+namespace aiprovider_openrouter;
 
 use core_ai\aiactions\base;
 use core_ai\provider;
 use GuzzleHttp\Psr7\Response;
 
 /**
- * Test response_base OpenAI provider methods.
+ * Test response_base OpenRouter provider methods.
  *
- * @package    aiprovider_openai
+ * @package    aiprovider_openrouter
+ * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
  * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \aiprovider_openai\provider
- * @covers     \aiprovider_openai\process_generate_image
- * @covers     \aiprovider_openai\abstract_processor
+ * @covers     \aiprovider_openrouter\provider
+ * @covers     \aiprovider_openrouter\process_generate_image
+ * @covers     \aiprovider_openrouter\abstract_processor
  */
 final class process_generate_image_test extends \advanced_testcase {
     /** @var string A successful response in JSON format. */
@@ -46,7 +47,9 @@ final class process_generate_image_test extends \advanced_testcase {
     protected function setUp(): void {
         parent::setUp();
         // Load a response body from a file.
-        $this->responsebodyjson = file_get_contents(self::get_fixture_path('aiprovider_openai', 'image_request_success.json'));
+        $this->responsebodyjson = file_get_contents(self::get_fixture_path('aiprovider_openrouter', 'image_request_success.json'));
+        set_config('action_generate_image_model', 'openai/dall-e-3', 'aiprovider_openrouter');
+        set_config('action_generate_image_endpoint', 'https://openrouter.ai/api/v1/images/generations', 'aiprovider_openrouter');
         $this->create_provider();
         $this->create_action();
     }
@@ -55,7 +58,7 @@ final class process_generate_image_test extends \advanced_testcase {
      * Create the provider object.
      */
     private function create_provider(): void {
-        $this->provider = new \aiprovider_openai\provider();
+        $this->provider = new \aiprovider_openrouter\provider();
     }
 
     /**
@@ -109,7 +112,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $requestdata = (object) json_decode($request->getBody()->getContents());
 
         $this->assertEquals('This is a test prompt', $requestdata->prompt);
-        $this->assertEquals('dall-e-3', $requestdata->model);
+        $this->assertEquals('openai/dall-e-3', $requestdata->model);
         $this->assertEquals('1', $requestdata->n);
         $this->assertEquals('hd', $requestdata->quality);
         $this->assertEquals('url', $requestdata->response_format);
@@ -142,7 +145,8 @@ final class process_generate_image_test extends \advanced_testcase {
             } else if ($status == 503) {
                 $this->assertEquals('Service Unavailable', $result['errormessage']);
             } else {
-                $this->assertStringContainsString($response->getBody()->getContents(), $result['errormessage']);
+                $expectedmessage = $response->getBody()->getContents();
+                $this->assertStringContainsString($expectedmessage, $result['errormessage']);
             }
         }
     }
@@ -163,8 +167,8 @@ final class process_generate_image_test extends \advanced_testcase {
 
         $result = $method->invoke($processor, $response);
 
-        $this->stringContains('An image that represents the concept of a \'test\'.', $result['revisedprompt']);
-        $this->stringContains('oaidalleapiprodscus.blob.core.windows.net', $result['sourceurl']);
+        $this->assertStringContainsString('An image that represents the concept of a \'test\'.', $result['revisedprompt']);
+        $this->assertStringContainsString('oaidalleapiprodscus.blob.core.windows.net', $result['sourceurl']);
     }
 
     /**
@@ -186,7 +190,7 @@ final class process_generate_image_test extends \advanced_testcase {
             200,
             ['Content-Type' => 'image/jpeg'],
             \GuzzleHttp\Psr7\Utils::streamFor(fopen(
-                self::get_fixture_path('aiprovider_openai', 'test.jpg'),
+                self::get_fixture_path('aiprovider_openrouter', 'test.jpg'),
                 'r',
             )),
         ));
@@ -208,8 +212,8 @@ final class process_generate_image_test extends \advanced_testcase {
         $method = new \ReflectionMethod($processor, 'query_ai_api');
         $result = $method->invoke($processor);
 
-        $this->stringContains('An image that represents the concept of a \'test\'.', $result['revisedprompt']);
-        $this->stringContains('oaidalleapiprodscus.blob.core.windows.net', $result['sourceurl']);
+        $this->assertStringContainsString('An image that represents the concept of a \'test\'.', $result['revisedprompt']);
+        $this->assertStringContainsString('oaidalleapiprodscus.blob.core.windows.net', $result['sourceurl']);
     }
 
     /**
@@ -311,7 +315,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $mock->append(new Response(
             200,
             ['Content-Type' => 'image/jpeg'],
-            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openai', 'test.jpg'), 'r')),
+            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openrouter', 'test.jpg'), 'r')),
         ));
 
         // Create a request object.
@@ -384,8 +388,8 @@ final class process_generate_image_test extends \advanced_testcase {
         $clock = $this->mock_clock_with_frozen();
 
         // Set the user rate limiter.
-        set_config('enableuserratelimit', 1, 'aiprovider_openai');
-        set_config('userratelimit', 1, 'aiprovider_openai');
+        set_config('enableuserratelimit', 1, 'aiprovider_openrouter');
+        set_config('userratelimit', 1, 'aiprovider_openrouter');
 
         // Mock the http client to return a successful response.
         ['mock' => $mock] = $this->get_mocked_http_client();
@@ -412,7 +416,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $mock->append(new Response(
             200,
             ['Content-Type' => 'image/jpeg'],
-            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openai', 'test.jpg'), 'r')),
+            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openrouter', 'test.jpg'), 'r')),
         ));
         $processor = new process_generate_image($this->provider, $this->action);
         $result = $processor->process();
@@ -438,7 +442,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $mock->append(new Response(
             200,
             ['Content-Type' => 'image/jpeg'],
-            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openai', 'test.jpg'), 'r')),
+            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openrouter', 'test.jpg'), 'r')),
         ));
         $this->create_provider();
         $this->create_action($user1->id);
@@ -471,7 +475,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $mock->append(new Response(
             200,
             ['Content-Type' => 'image/jpeg'],
-            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openai', 'test.jpg'), 'r')),
+            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openrouter', 'test.jpg'), 'r')),
         ));
         $processor = new process_generate_image($this->provider, $this->action);
         $result = $processor->process();
@@ -499,7 +503,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $mock->append(new Response(
             200,
             ['Content-Type' => 'image/jpeg'],
-            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openai', 'test.jpg'), 'r')),
+            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openrouter', 'test.jpg'), 'r')),
         ));
         $this->create_provider();
         $this->create_action($user1->id);
@@ -522,8 +526,8 @@ final class process_generate_image_test extends \advanced_testcase {
         $clock = $this->mock_clock_with_frozen();
 
         // Set the global rate limiter.
-        set_config('enableglobalratelimit', 1, 'aiprovider_openai');
-        set_config('globalratelimit', 1, 'aiprovider_openai');
+        set_config('enableglobalratelimit', 1, 'aiprovider_openrouter');
+        set_config('globalratelimit', 1, 'aiprovider_openrouter');
 
         // Mock the http client to return a successful response.
         ['mock' => $mock] = $this->get_mocked_http_client();
@@ -550,7 +554,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $mock->append(new Response(
             200,
             ['Content-Type' => 'image/jpeg'],
-            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openai', 'test.jpg'), 'r')),
+            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openrouter', 'test.jpg'), 'r')),
         ));
         $processor = new process_generate_image($this->provider, $this->action);
         $result = $processor->process();
@@ -576,7 +580,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $mock->append(new Response(
             200,
             ['Content-Type' => 'image/jpeg'],
-            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openai', 'test.jpg'), 'r')),
+            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openrouter', 'test.jpg'), 'r')),
         ));
         $this->create_provider();
         $this->create_action($user1->id);
@@ -609,7 +613,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $mock->append(new Response(
             200,
             ['Content-Type' => 'image/jpeg'],
-            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openai', 'test.jpg'), 'r')),
+            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openrouter', 'test.jpg'), 'r')),
         ));
         $processor = new process_generate_image($this->provider, $this->action);
         $result = $processor->process();
@@ -637,7 +641,7 @@ final class process_generate_image_test extends \advanced_testcase {
         $mock->append(new Response(
             200,
             ['Content-Type' => 'image/jpeg'],
-            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openai', 'test.jpg'), 'r')),
+            \GuzzleHttp\Psr7\Utils::streamFor(fopen(self::get_fixture_path('aiprovider_openrouter', 'test.jpg'), 'r')),
         ));
         $this->create_provider();
         $this->create_action($user1->id);

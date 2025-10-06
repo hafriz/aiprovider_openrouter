@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace aiprovider_openai;
+namespace aiprovider_openrouter;
 
 use core\http_client;
 use core_ai\ai_image;
@@ -27,7 +27,8 @@ use Psr\Http\Message\UriInterface;
 /**
  * Class process image generation.
  *
- * @package    aiprovider_openai
+ * @package    aiprovider_openrouter
+ * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
  * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -40,12 +41,12 @@ class process_generate_image extends abstract_processor {
 
     #[\Override]
     protected function get_endpoint(): UriInterface {
-        return new Uri(get_config('aiprovider_openai', 'action_generate_image_endpoint'));
+        return new Uri(get_config('aiprovider_openrouter', 'action_generate_image_endpoint'));
     }
 
     #[\Override]
     protected function get_model(): string {
-        return get_config('aiprovider_openai', 'action_generate_image_model');
+        return get_config('aiprovider_openrouter', 'action_generate_image_model');
     }
 
     #[\Override]
@@ -110,11 +111,12 @@ class process_generate_image extends abstract_processor {
     protected function handle_api_success(ResponseInterface $response): array {
         $responsebody = $response->getBody();
         $bodyobj = json_decode($responsebody->getContents());
+        $data = $bodyobj->data[0] ?? new \stdClass();
 
         return [
             'success' => true,
-            'sourceurl' => $bodyobj->data[0]->url,
-            'revisedprompt' => $bodyobj->data[0]->revised_prompt,
+            'sourceurl' => $data->url ?? '',
+            'revisedprompt' => $data->revised_prompt ?? '',
         ];
     }
 

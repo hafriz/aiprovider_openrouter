@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace aiprovider_openai;
+namespace aiprovider_openrouter;
 
 use GuzzleHttp\Psr7\Uri;
 use Psr\Http\Message\UriInterface;
@@ -22,23 +22,24 @@ use Psr\Http\Message\UriInterface;
 /**
  * Class process text summarisation.
  *
- * @package    aiprovider_openai
+ * @package    aiprovider_openrouter
+ * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
  * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class process_summarise_text extends process_generate_text {
     #[\Override]
     protected function get_endpoint(): UriInterface {
-        return new Uri(get_config('aiprovider_openai', 'action_summarise_text_endpoint'));
+        return new Uri(get_config('aiprovider_openrouter', 'action_summarise_text_endpoint'));
     }
 
     #[\Override]
     protected function get_model(): string {
-        return get_config('aiprovider_openai', 'action_summarise_text_model');
+        return get_config('aiprovider_openrouter', 'action_summarise_text_model');
     }
 
     #[\Override]
     protected function get_system_instruction(): string {
-        return get_config('aiprovider_openai', 'action_summarise_text_systeminstruction');
+        return get_config('aiprovider_openrouter', 'action_summarise_text_systeminstruction');
     }
 }

@@ -14,15 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace aiprovider_openai;
+namespace aiprovider_openrouter;
+
+use GuzzleHttp\Psr7\Request;
 
 /**
- * Test OpenAI provider methods.
+ * Test OpenRouter provider methods.
  *
- * @package    aiprovider_openai
+ * @package    aiprovider_openrouter
+ * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
  * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \aiprovider_openai\provider
+ * @covers     \aiprovider_openrouter\provider
  */
 final class provider_test extends \advanced_testcase {
     /**
@@ -51,16 +54,35 @@ final class provider_test extends \advanced_testcase {
     }
 
     /**
+     * Test add_authentication_headers.
+     */
+    public function test_add_authentication_headers(): void {
+        $this->resetAfterTest();
+
+        set_config('apikey', 'secret-key', 'aiprovider_openrouter');
+        set_config('httpreferer', 'https://example.com', 'aiprovider_openrouter');
+        set_config('xtitle', 'Example Moodle', 'aiprovider_openrouter');
+
+        $provider = new provider();
+        $request = new Request('GET', 'https://openrouter.ai/api/v1/chat/completions');
+        $updatedrequest = $provider->add_authentication_headers($request);
+
+        $this->assertEquals('Bearer secret-key', $updatedrequest->getHeaderLine('Authorization'));
+        $this->assertEquals('https://example.com', $updatedrequest->getHeaderLine('HTTP-Referer'));
+        $this->assertEquals('Example Moodle', $updatedrequest->getHeaderLine('X-Title'));
+    }
+
+    /**
      * Test is_request_allowed.
      */
     public function test_is_request_allowed(): void {
         $this->resetAfterTest();
 
         // Set plugin config rate limiter settings.
-        set_config('enableglobalratelimit', 1, 'aiprovider_openai');
-        set_config('globalratelimit', 5, 'aiprovider_openai');
-        set_config('enableuserratelimit', 1, 'aiprovider_openai');
-        set_config('userratelimit', 3, 'aiprovider_openai');
+        set_config('enableglobalratelimit', 1, 'aiprovider_openrouter');
+        set_config('globalratelimit', 5, 'aiprovider_openrouter');
+        set_config('enableuserratelimit', 1, 'aiprovider_openrouter');
+        set_config('userratelimit', 3, 'aiprovider_openrouter');
 
         $contextid = 1;
         $userid = 1;
@@ -118,12 +140,12 @@ final class provider_test extends \advanced_testcase {
         $this->resetAfterTest();
 
         // No configured values.
-        $provider = new \aiprovider_openai\provider();
+        $provider = new \aiprovider_openrouter\provider();
         $this->assertFalse($provider->is_provider_configured());
 
         // Properly configured values.
-        set_config('apikey', '123', 'aiprovider_openai');
-        $provider = new \aiprovider_openai\provider();
+        set_config('apikey', '123', 'aiprovider_openrouter');
+        $provider = new \aiprovider_openrouter\provider();
         $this->assertTrue($provider->is_provider_configured());
     }
 }

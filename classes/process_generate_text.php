@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace aiprovider_openai;
+namespace aiprovider_openrouter;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
@@ -25,24 +25,25 @@ use Psr\Http\Message\UriInterface;
 /**
  * Class process text generation.
  *
- * @package    aiprovider_openai
+ * @package    aiprovider_openrouter
+ * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
  * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class process_generate_text extends abstract_processor {
     #[\Override]
     protected function get_endpoint(): UriInterface {
-        return new Uri(get_config('aiprovider_openai', 'action_generate_text_endpoint'));
+        return new Uri(get_config('aiprovider_openrouter', 'action_generate_text_endpoint'));
     }
 
     #[\Override]
     protected function get_model(): string {
-        return get_config('aiprovider_openai', 'action_generate_text_model');
+        return get_config('aiprovider_openrouter', 'action_generate_text_model');
     }
 
     #[\Override]
     protected function get_system_instruction(): string {
-        return get_config('aiprovider_openai', 'action_generate_text_systeminstruction');
+        return get_config('aiprovider_openrouter', 'action_generate_text_systeminstruction');
     }
 
     #[\Override]
@@ -79,6 +80,50 @@ class process_generate_text extends abstract_processor {
     }
 
     /**
+     * Normalise assistant message content to a plain string.
+     *
+     * @param object $message The message payload.
+     * @return string
+     */
+    private function normalise_message_content(object $message): string {
+        if (!empty($message->content) && is_string($message->content)) {
+            return $message->content;
+        }
+
+        $content = $message->content ?? '';
+        $textparts = [];
+
+        // Handle array based message payloads.
+        if (is_array($content)) {
+            foreach ($content as $part) {
+                if (is_string($part)) {
+                    $textparts[] = $part;
+                } else if (is_object($part)) {
+                    if (isset($part->text) && is_string($part->text)) {
+                        $textparts[] = $part->text;
+                    } else if (isset($part->content) && is_string($part->content)) {
+                        $textparts[] = $part->content;
+                    }
+                } else if (is_array($part) && isset($part['text']) && is_string($part['text'])) {
+                    $textparts[] = $part['text'];
+                }
+            }
+        } else if (is_object($content)) {
+            if (isset($content->text) && is_string($content->text)) {
+                $textparts[] = $content->text;
+            } else if (isset($content->content) && is_string($content->content)) {
+                $textparts[] = $content->content;
+            }
+        }
+
+        if (!empty($textparts)) {
+            return implode('', $textparts);
+        }
+
+        return is_scalar($content) ? (string) $content : '';
+    }
+
+    /**
      * Handle a successful response from the external AI api.
      *
      * @param ResponseInterface $response The response object.
@@ -88,14 +133,19 @@ class process_generate_text extends abstract_processor {
         $responsebody = $response->getBody();
         $bodyobj = json_decode($responsebody->getContents());
 
+        $choice = $bodyobj->choices[0] ?? new \stdClass();
+        $message = $choice->message ?? new \stdClass();
+        $generatedcontent = $this->normalise_message_content($message);
+        $usage = $bodyobj->usage ?? new \stdClass();
+
         return [
             'success' => true,
-            'id' => $bodyobj->id,
-            'fingerprint' => $bodyobj->system_fingerprint,
-            'generatedcontent' => $bodyobj->choices[0]->message->content,
-            'finishreason' => $bodyobj->choices[0]->finish_reason,
-            'prompttokens' => $bodyobj->usage->prompt_tokens,
-            'completiontokens' => $bodyobj->usage->completion_tokens,
+            'id' => $bodyobj->id ?? '',
+            'fingerprint' => $bodyobj->system_fingerprint ?? '',
+            'generatedcontent' => $generatedcontent,
+            'finishreason' => $choice->finish_reason ?? '',
+            'prompttokens' => $usage->prompt_tokens ?? 0,
+            'completiontokens' => $usage->completion_tokens ?? 0,
         ];
     }
 }

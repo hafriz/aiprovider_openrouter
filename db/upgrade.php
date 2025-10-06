@@ -15,17 +15,30 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for aiprovider_openrouter.
+ * Upgrade script for the OpenRouter AI provider.
  *
  * @package    aiprovider_openrouter
  * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
- * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'aiprovider_openrouter';
-$plugin->version = 2024100701;
-$plugin->requires = 2024100100;
-$plugin->maturity = MATURITY_STABLE;
+/**
+ * Execute OpenRouter AI provider upgrades.
+ *
+ * @param int $oldversion The currently installed version.
+ * @return bool
+ */
+function xmldb_aiprovider_openrouter_upgrade(int $oldversion): bool {
+    if ($oldversion < 2024100701) {
+        $legacyorgid = get_config('aiprovider_openrouter', 'orgid');
+        $httpreferer = get_config('aiprovider_openrouter', 'httpreferer');
+        if (!empty($legacyorgid) && empty($httpreferer)) {
+            set_config('httpreferer', $legacyorgid, 'aiprovider_openrouter');
+        }
+        upgrade_plugin_savepoint(true, 2024100701, 'aiprovider', 'openrouter');
+    }
+
+    return true;
+}
