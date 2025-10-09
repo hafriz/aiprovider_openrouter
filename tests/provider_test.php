@@ -110,7 +110,7 @@ final class provider_test extends \advanced_testcase {
         // The 4th request for the same user should be denied.
         $result = $provider->is_request_allowed($action);
         $this->assertFalse($result['success']);
-        $this->assertEquals('User rate limit exceeded', $result['errormessage']);
+        $this->assertEquals(get_string('userratelimitexceeded', 'aiprovider_openrouter'), $result['errormessage']);
 
         // Change user id to make a request for a different user, should pass (4 requests for global rate).
         $action = new \core_ai\aiactions\generate_image(
@@ -130,7 +130,7 @@ final class provider_test extends \advanced_testcase {
         // The 6th request should be denied.
         $result = $provider->is_request_allowed($action);
         $this->assertFalse($result['success']);
-        $this->assertEquals('Global rate limit exceeded', $result['errormessage']);
+        $this->assertEquals(get_string('globalratelimitexceeded', 'aiprovider_openrouter'), $result['errormessage']);
     }
 
     /**
