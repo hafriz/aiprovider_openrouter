@@ -40,7 +40,7 @@ vendor/bin/phpunit ai/provider/openrouter/tests
 *(Depending on your environment you may need to install PHPUnit via Composer first.)*
 
 ### Continuous Integration
-This plugin uses GitHub Actions to automatically run Moodle Plugin CI tests on every commit. The CI workflow tests the plugin against multiple PHP versions (8.0, 8.1, 8.2, 8.3) and database engines (PostgreSQL and MariaDB) to ensure compatibility and code quality.
+This plugin uses GitHub Actions to automatically run Moodle Plugin CI tests on every commit. The CI workflow tests the plugin against multiple PHP versions (8.1, 8.2, 8.3) and database engines (PostgreSQL and MariaDB) to ensure compatibility and code quality.
 
 ## Support
 For questions specific to this Moodle integration, contact the e-Learning Team at Universiti Malaysia Terengganu: `el@umt.edu.my`.
