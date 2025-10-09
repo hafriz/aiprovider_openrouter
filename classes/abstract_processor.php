@@ -30,7 +30,6 @@ use Psr\Http\Message\UriInterface;
  *
  * @package    aiprovider_openrouter
  * @copyright  2025 e-Learning Team, Universiti Malaysia Terengganu <el@umt.edu.my>
- * @copyright  2024 Matt Porritt <matt.porritt@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class abstract_processor extends process_base {
