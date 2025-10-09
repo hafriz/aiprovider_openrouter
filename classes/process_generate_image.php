@@ -81,7 +81,7 @@ class process_generate_image extends abstract_processor {
         } else if ($ratio === 'portrait') {
             $size = '1024x1792';
         } else {
-            throw new \coding_exception('Invalid aspect ratio: ' . $ratio);
+            throw new \coding_exception(get_string('invalidaspectratio', 'aiprovider_openrouter', $ratio));
         }
         return $size;
     }

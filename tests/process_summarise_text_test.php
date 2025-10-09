@@ -330,7 +330,7 @@ final class process_summarise_text_test extends \advanced_testcase {
         $processor = new process_summarise_text($this->provider, $this->action);
         $result = $processor->process();
         $this->assertEquals(429, $result->get_errorcode());
-        $this->assertEquals('User rate limit exceeded', $result->get_errormessage());
+        $this->assertEquals(get_string('userratelimitexceeded', 'aiprovider_openrouter'), $result->get_errormessage());
         $this->assertFalse($result->get_success());
 
         // Case 3: User rate limit has not been reached for a different user.
@@ -411,7 +411,7 @@ final class process_summarise_text_test extends \advanced_testcase {
         $processor = new process_summarise_text($this->provider, $this->action);
         $result = $processor->process();
         $this->assertEquals(429, $result->get_errorcode());
-        $this->assertEquals('Global rate limit exceeded', $result->get_errormessage());
+        $this->assertEquals(get_string('globalratelimitexceeded', 'aiprovider_openrouter'), $result->get_errormessage());
         $this->assertFalse($result->get_success());
 
         // Case 3: Global rate limit has been reached for a different user too.
