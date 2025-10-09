@@ -4,6 +4,10 @@ This plugin integrates the [OpenRouter](https://openrouter.ai/) API with Moodle'
 
 > **Note**: According to [Moodle plugin naming conventions](https://moodledev.io/general/community/plugincontribution/checklist#code-repository-name), this repository should ideally be named `moodle-aiprovider_openrouter` to follow the pattern `moodle-{plugintype}_{pluginname}`. While not a strict requirement, this helps provide a consistent experience for Moodle developers.
 
+## Copyright Notice
+
+This plugin (aiprovider_openrouter) is based on the original aiprovider_openai plugin by Matt Porritt. Portions of the code and design are derived from Matt Porritt's work. All rights reserved to the respective authors.
+
 ## Features
 - Supports the core AI actions `generate_text`, `summarise_text`, and `generate_image`.
 - Configurable per-action model selection and endpoint URLs.
